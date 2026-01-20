@@ -3,6 +3,8 @@ package com.example.meaningosapp
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioManager
+import android.net.Uri
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
@@ -12,56 +14,67 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.meaningosapp.ui.main.MainScreen
 import com.example.meaningosapp.ui.theme.MeaningOSAppTheme
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
 
-    // Permission launcher
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            // optional: handle UI feedback if needed
-        }
+    // UI state (Compose-friendly)
+    private val lastRecognizedText = mutableStateOf("")
+    private val lastResponse = mutableStateOf("")
+    private val isListeningState = mutableStateOf(false)
 
-    // TextToSpeech fields
+    // TTS
     private var tts: TextToSpeech? = null
     private var selectedVoice: Voice? = null
 
-    // UI state
-    private val lastRecognizedText = mutableStateOf("")
-    private val lastResponse = mutableStateOf("")
+    // Permission launcher for microphone
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (!isGranted) {
+                Log.w("MeaningOS", "Microphone permission not granted")
+            }
+        }
 
-    // Speech recognizer launcher (consumes MeaningResult)
+    // Speech recognizer launcher
     private val speechLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            // Always clear listening state when we get a result (success or cancel)
+            isListeningState.value = false
+
             val data = result.data
             val spokenText = data
                 ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
                 ?.firstOrNull()
 
             if (spokenText != null) {
-                // Update UI with what was recognized
                 lastRecognizedText.value = spokenText
 
-                // IntentEngine now returns MeaningResult
+                // Pure meaning mapping (no side effects)
                 val meaningResult = IntentEngine.handleMeaning(spokenText)
 
-                // Display the text portion on screen
+                // Update UI text
                 lastResponse.value = meaningResult.text
 
-                // Speak only when the meaning requests it
+                // If action requests immediate stop, stop TTS before speaking
+                if (meaningResult.action is OSAction.StopSpeech) {
+                    tts?.stop()
+                }
+
+                // Speak if requested
                 if (meaningResult.speak) {
                     val toSpeak = meaningResult.speechText ?: meaningResult.text
                     speak(toSpeak)
                 }
+
+                // Dispatch OS action (side effects)
+                handleOSAction(meaningResult.action)
+            } else {
+                // No recognized text (user cancelled or nothing recognized)
+                lastResponse.value = "I didn't catch that."
             }
         }
 
@@ -71,26 +84,22 @@ class MainActivity : ComponentActivity() {
 
         ensureMicPermission()
 
-        // Initialize TextToSpeech before UI so it's ready when user triggers speak
+        // Initialize TTS
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                // Baseline locale
-                tts?.language = Locale.US
-
-                // Heuristic: prefer voices whose name suggests male/expressive/deep/rich
                 try {
+                    tts?.language = Locale.US
                     val voices = tts?.voices
                     selectedVoice = voices?.firstOrNull { v ->
                         val name = v.name.lowercase()
-                        (name.contains("male") || name.contains("expressive") || name.contains("deep") || name.contains("rich"))
+                        (name.contains("male") || name.contains("man") || name.contains("deep") || name.contains("rich") || name.contains("expressive"))
                     } ?: tts?.defaultVoice
 
                     selectedVoice?.let { tts?.voice = it }
-
-                    // Debug log (optional)
                     Log.d("MeaningOS", "Selected TTS voice: ${selectedVoice?.name ?: "default"}")
                 } catch (e: Exception) {
                     selectedVoice = tts?.defaultVoice
+                    Log.w("MeaningOS", "TTS voice selection failed: ${e.message}")
                 }
             } else {
                 Log.w("MeaningOS", "TTS initialization failed with status $status")
@@ -99,37 +108,22 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MeaningOSAppTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-
-                    Column(
-                        modifier = Modifier
-                            .padding(innerPadding)
-                            .padding(24.dp)
-                    ) {
-
-                        Button(onClick = { startListening() }) {
-                            Text("Start Listening")
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Text("You said: ${lastRecognizedText.value}")
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text("MeaningOS: ${lastResponse.value}")
-                    }
-                }
+                MainScreen(
+                    youSaid = lastRecognizedText.value,
+                    meaningText = lastResponse.value,
+                    isListening = isListeningState.value,
+                    onStartListening = { startListening() }
+                )
             }
         }
     }
-    // Ensure microphone permission
+
     private fun ensureMicPermission() {
         val permission = Manifest.permission.RECORD_AUDIO
         when {
             ContextCompat.checkSelfPermission(this, permission) ==
                     PackageManager.PERMISSION_GRANTED -> {
-                // Already granted
+                // already granted
             }
             else -> {
                 requestPermissionLauncher.launch(permission)
@@ -138,7 +132,10 @@ class MainActivity : ComponentActivity() {
     }
 
     // Start system speech recognizer
-    private fun startListening() {
+    fun startListening() {
+        // Set UI state immediately so the button pulses
+        isListeningState.value = true
+
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(
                 RecognizerIntent.EXTRA_LANGUAGE_MODEL,
@@ -154,10 +151,60 @@ class MainActivity : ComponentActivity() {
         if (text.isNullOrBlank()) return
 
         tts?.let { engine ->
-            // Configure for a warm, expressive default
-            engine.setSpeechRate(1.0f)   // normal speed; tweak to taste
-            engine.setPitch(1.0f)        // normal pitch; lower for deeper warmth
+            engine.setSpeechRate(1.0f)
+            engine.setPitch(1.0f)
             engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "MeaningOSUtterance")
+        }
+    }
+
+    // Centralized OS action dispatcher (all side effects here)
+    private fun handleOSAction(action: OSAction) {
+        when (action) {
+            is OSAction.None -> { /* no-op */ }
+
+            is OSAction.LaunchApp -> {
+                try {
+                    val launchIntent = packageManager.getLaunchIntentForPackage(action.packageName)
+                    if (launchIntent != null) {
+                        startActivity(launchIntent)
+                    } else {
+                        // Fallback: open Play Store listing
+                        val playIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${action.packageName}"))
+                        startActivity(playIntent)
+                    }
+                } catch (e: Exception) {
+                    lastResponse.value = "Can't open that app on this device."
+                    Log.w("MeaningOS", "LaunchApp failed: ${e.message}")
+                }
+            }
+
+            is OSAction.OpenUrl -> {
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(action.url))
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    lastResponse.value = "Failed to open the link."
+                    Log.w("MeaningOS", "OpenUrl failed: ${e.message}")
+                }
+            }
+
+            is OSAction.SetVolume -> {
+                try {
+                    val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+                    val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                    val newVol = (action.percent.coerceIn(0, 100) * max) / 100
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVol, 0)
+                    lastResponse.value = "Volume set to ${action.percent}%."
+                } catch (e: Exception) {
+                    lastResponse.value = "Unable to set volume."
+                    Log.w("MeaningOS", "SetVolume failed: ${e.message}")
+                }
+            }
+
+            is OSAction.StopSpeech -> {
+                tts?.stop()
+                lastResponse.value = "Okay, I will be quiet."
+            }
         }
     }
 
