@@ -1,24 +1,21 @@
 package com.example.meaningosapp.ui.main
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Button
-import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun MainScreen(
@@ -46,6 +43,7 @@ fun MainScreen(
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // StartListeningButton is expected to be in the same package (StartListeningButton.kt)
                 StartListeningButton(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -62,41 +60,6 @@ fun MainScreen(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun StartListeningButton(
-    modifier: Modifier = Modifier,
-    isListening: Boolean,
-    onClick: () -> Unit
-) {
-    val infinite = rememberInfiniteTransition()
-    val pulse by infinite.animateFloat(
-        initialValue = if (isListening) 0.98f else 1.0f,
-        targetValue = if (isListening) 1.04f else 1.0f,
-        animationSpec = if (isListening) infiniteRepeatable(
-            animation = tween(1200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ) else tween(200)
-    )
-
-    val buttonColors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0B3D91))
-    Button(
-        onClick = onClick,
-        colors = buttonColors,
-        shape = RoundedCornerShape(12.dp),
-        modifier = modifier
-            .scale(pulse)
-    ) {
-        Text(
-            text = if (isListening) "Listening…" else "START LISTENING",
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
     }
 }
 

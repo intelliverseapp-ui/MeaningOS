@@ -8,34 +8,31 @@ import android.net.Uri
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
-import android.speech.tts.Voice
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import com.example.meaningosapp.ui.main.MainScreen
-import com.example.meaningosapp.ui.theme.MeaningOSAppTheme
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
 
-    // UI state (Compose-friendly)
+    // Compose-friendly UI state
     private val lastRecognizedText = mutableStateOf("")
     private val lastResponse = mutableStateOf("")
     private val isListeningState = mutableStateOf(false)
 
-    // TTS
+    // TTS engine
     private var tts: TextToSpeech? = null
-    private var selectedVoice: Voice? = null
 
-    // Permission launcher for microphone
+    // Permission launcher for RECORD_AUDIO
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (!isGranted) {
-                Log.w("MeaningOS", "Microphone permission not granted")
+                Log.w(TAG, "Microphone permission not granted")
             }
         }
 
@@ -50,10 +47,10 @@ class MainActivity : ComponentActivity() {
                 ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
                 ?.firstOrNull()
 
-            if (spokenText != null) {
+            if (!spokenText.isNullOrBlank()) {
                 lastRecognizedText.value = spokenText
 
-                // Pure meaning mapping (no side effects)
+                // Map spoken text to meaning/result using the placeholder IntentEngine
                 val meaningResult = IntentEngine.handleMeaning(spokenText)
 
                 // Update UI text
@@ -80,7 +77,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
 
         ensureMicPermission()
 
@@ -89,25 +85,18 @@ class MainActivity : ComponentActivity() {
             if (status == TextToSpeech.SUCCESS) {
                 try {
                     tts?.language = Locale.US
-                    val voices = tts?.voices
-                    selectedVoice = voices?.firstOrNull { v ->
-                        val name = v.name.lowercase()
-                        (name.contains("male") || name.contains("man") || name.contains("deep") || name.contains("rich") || name.contains("expressive"))
-                    } ?: tts?.defaultVoice
-
-                    selectedVoice?.let { tts?.voice = it }
-                    Log.d("MeaningOS", "Selected TTS voice: ${selectedVoice?.name ?: "default"}")
+                    tts?.voice = tts?.defaultVoice
+                    Log.d(TAG, "TTS initialized")
                 } catch (e: Exception) {
-                    selectedVoice = tts?.defaultVoice
-                    Log.w("MeaningOS", "TTS voice selection failed: ${e.message}")
+                    Log.w(TAG, "TTS initialization error: ${e.message}")
                 }
             } else {
-                Log.w("MeaningOS", "TTS initialization failed with status $status")
+                Log.w(TAG, "TTS initialization failed with status $status")
             }
         }
 
         setContent {
-            MeaningOSAppTheme {
+            MaterialTheme {
                 MainScreen(
                     youSaid = lastRecognizedText.value,
                     meaningText = lastResponse.value,
@@ -131,7 +120,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Start system speech recognizer
+    /**
+     * Start the system speech recognizer.
+     * Sets the listening state immediately so UI can react.
+     */
     fun startListening() {
         // Set UI state immediately so the button pulses
         isListeningState.value = true
@@ -146,10 +138,8 @@ class MainActivity : ComponentActivity() {
         speechLauncher.launch(intent)
     }
 
-    // Speak helper using TTS
     private fun speak(text: String?) {
         if (text.isNullOrBlank()) return
-
         tts?.let { engine ->
             engine.setSpeechRate(1.0f)
             engine.setPitch(1.0f)
@@ -157,7 +147,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Centralized OS action dispatcher (all side effects here)
     private fun handleOSAction(action: OSAction) {
         when (action) {
             is OSAction.None -> { /* no-op */ }
@@ -169,12 +158,15 @@ class MainActivity : ComponentActivity() {
                         startActivity(launchIntent)
                     } else {
                         // Fallback: open Play Store listing
-                        val playIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${action.packageName}"))
+                        val playIntent = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("market://details?id=${action.packageName}")
+                        )
                         startActivity(playIntent)
                     }
                 } catch (e: Exception) {
                     lastResponse.value = "Can't open that app on this device."
-                    Log.w("MeaningOS", "LaunchApp failed: ${e.message}")
+                    Log.w(TAG, "LaunchApp failed: ${e.message}")
                 }
             }
 
@@ -184,7 +176,7 @@ class MainActivity : ComponentActivity() {
                     startActivity(intent)
                 } catch (e: Exception) {
                     lastResponse.value = "Failed to open the link."
-                    Log.w("MeaningOS", "OpenUrl failed: ${e.message}")
+                    Log.w(TAG, "OpenUrl failed: ${e.message}")
                 }
             }
 
@@ -197,7 +189,7 @@ class MainActivity : ComponentActivity() {
                     lastResponse.value = "Volume set to ${action.percent}%."
                 } catch (e: Exception) {
                     lastResponse.value = "Unable to set volume."
-                    Log.w("MeaningOS", "SetVolume failed: ${e.message}")
+                    Log.w(TAG, "SetVolume failed: ${e.message}")
                 }
             }
 
@@ -213,5 +205,9 @@ class MainActivity : ComponentActivity() {
         tts?.stop()
         tts?.shutdown()
         tts = null
+    }
+
+    companion object {
+        private const val TAG = "MeaningOS"
     }
 }
