@@ -1,11 +1,11 @@
-package com.example.meaningosapp
+package com.example.meaningosapp.core
 
-import com.example.meaningosapp.ui.main.face.AppContextHolder
-import com.example.meaningosapp.ui.main.face.AppLauncher
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.net.URLEncoder
 import kotlin.random.Random
+import com.example.meaningosapp.core.tools.ToolType
 
 object IntentEngine {
 
@@ -128,96 +128,21 @@ object IntentEngine {
         val lower = raw.lowercase()
         turnCount++
 
-        // === Control ===
-        if (lower in listOf("stop", "stop speaking", "be quiet", "shut up")) {
-            val meaning = MeaningObject("control", "stop", rawText = raw)
-            val text = ExpressionComposer.compose(meaning, continuity())
-            updateContinuity(meaning, text, null)
-            return MeaningResult(
-                text = text,
-                speak = false,
-                action = OSAction.StopSpeech
-            )
-        }
-
-        // === Identity ===
-        if (lower.contains("who are you") || lower.contains("what are you")) {
-            return respond(MeaningObject("identity", "who_are_you", rawText = raw))
-        }
-
-        if (lower.contains("who made you") || lower.contains("who created you")) {
-            return respond(MeaningObject("identity", "who_made_you", rawText = raw))
-        }
-
-        if (lower.contains("what can you do") || lower.contains("what do you do")) {
-            return respond(MeaningObject("identity", "capabilities", rawText = raw))
-        }
-
-        // === Relationship ===
-        if (lower.contains("how are you")) {
-            return respond(MeaningObject("relationship", "how_are_you", rawText = raw))
-        }
-
-        if (lower.contains("are you listening") || lower.contains("do you hear me")) {
-            return respond(MeaningObject("relationship", "are_you_listening", rawText = raw))
-        }
-
-        if (lower.contains("do you understand me")) {
-            return respond(MeaningObject("relationship", "do_you_understand_me", rawText = raw))
-        }
-
-        if (lower.contains("do you like talking to me")) {
-            return respond(MeaningObject("relationship", "do_you_like_talking_to_me", rawText = raw))
-        }
-
-        // === Time ===
-        if (lower.contains("what time is it") || lower.contains("tell me the time")) {
-            val now = LocalTime.now()
-            val formatter = DateTimeFormatter.ofPattern("h:mm a")
-            val timeText = now.format(formatter)
-
-            val meaning = MeaningObject("device_state", "time", topic = "time", rawText = raw)
-            val text = ExpressionComposer.compose(
-                meaning,
-                continuity(),
-                extra = mapOf("time" to timeText)
-            )
-            updateContinuity(meaning, text, null)
-            return MeaningResult(text, true, OSAction.None)
-        }
-
-        // === Date ===
-        if (lower.contains("what day is it") ||
-            lower.contains("what's the date") ||
-            lower.contains("what is the date")
-        ) {
-            val today = LocalDate.now()
-            val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
-            val dateText = today.format(formatter)
-
-            val meaning = MeaningObject("device_state", "date", topic = "date", rawText = raw)
-            val text = ExpressionComposer.compose(
-                meaning,
-                continuity(),
-                extra = mapOf("date" to dateText)
-            )
-            updateContinuity(meaning, text, null)
-            return MeaningResult(text, true, OSAction.None)
-        }
-
-        // === Device Awareness ===
+        // =========================================
+        // DEVICE AWARENESS
+        // =========================================
         if (lower.contains("what phone is this") ||
             lower.contains("what device is this") ||
             lower.contains("where are you running") ||
-            lower.contains("are you on my phone")
-        ) {
+            lower.contains("are you on my phone")) {
             return respond(
                 MeaningObject(
                     "device_state",
                     "device",
                     topic = "device",
                     rawText = raw
-                )
+                ),
+                raw
             )
         }
 
@@ -228,129 +153,710 @@ object IntentEngine {
                     "where_are_you",
                     topic = "location",
                     rawText = raw
-                )
+                ),
+                raw
             )
         }
 
-        // === Emotion Parsing ===
-        emotionMatch(lower)?.let { emo ->
+        // =========================================
+        // IDENTITY MEANING DETECTION
+        // =========================================
+        if (lower.contains("who are you") ||
+            lower.contains("what are you") ||
+            lower.contains("who made you") ||
+            lower.contains("who created you") ||
+            lower.contains("what can you do") ||
+            lower.contains("what do you do")) {
+
+            val intent = when {
+                lower.contains("who are you") || lower.contains("what are you") ->
+                    "who_are_you"
+                lower.contains("who made you") || lower.contains("who created you") ->
+                    "who_made_you"
+                lower.contains("what can you do") || lower.contains("what do you do") ->
+                    "capabilities"
+                else -> "who_are_you"
+            }
+
+            return respond(
+                MeaningObject(
+                    type = "identity",
+                    intent = intent,
+                    topic = "identity",
+                    rawText = raw
+                ),
+                raw
+            )
+        }
+
+        // =========================================
+        // RELATIONSHIP MEANING DETECTION
+        // =========================================
+        if (lower.contains("how are you") ||
+            lower.contains("are you listening") ||
+            lower.contains("are you still listening") ||
+            lower.contains("do you hear me") ||
+            lower.contains("do you understand me") ||
+            lower.contains("do you get me") ||
+            lower.contains("do you like talking to me") ||
+            lower.contains("do you like to talk to me")) {
+
+            val intent = when {
+                lower.contains("how are you") ->
+                    "how_are_you"
+                lower.contains("are you listening") || lower.contains("are you still listening") ||
+                        lower.contains("do you hear me") ->
+                    "are_you_listening"
+                lower.contains("do you understand me") || lower.contains("do you get me") ->
+                    "do_you_understand_me"
+                lower.contains("do you like talking to me") ||
+                        lower.contains("do you like to talk to me") ->
+                    "do_you_like_talking_to_me"
+                else -> "how_are_you"
+            }
+
+            return respond(
+                MeaningObject(
+                    type = "relationship",
+                    intent = intent,
+                    topic = "relationship",
+                    rawText = raw
+                ),
+                raw
+            )
+        }
+
+        // =========================================
+        // EMOTION MEANING DETECTION
+        // =========================================
+        val detectedEmotion = emotionMatch(lower)
+        if (detectedEmotion != null) {
             return respond(
                 MeaningObject(
                     type = "emotion",
-                    intent = "emotion_$emo",
-                    emotion = emo,
+                    intent = "emotion",
+                    emotion = detectedEmotion,
                     topic = "emotion",
                     rawText = raw
-                )
+                ),
+                raw
             )
         }
 
-        if (lower.contains("how do i sound") || lower.contains("how do i seem")) {
-            return respond(
-                MeaningObject(
-                    type = "emotion",
-                    intent = "how_do_i_sound",
-                    emotion = continuity().lastEmotion,
-                    topic = "emotion",
-                    rawText = raw
-                )
-            )
-        }
+        // =========================================
+        // MEMORY MEANING DETECTION
+        // =========================================
+        if (lower.contains("do you remember") ||
+            lower.contains("what do you remember") ||
+            lower.contains("remember that") ||
+            lower.contains("remember this")) {
 
-        // === Memory ===
-        if (lower.contains("do you remember")) {
             return respond(
                 MeaningObject(
                     type = "memory",
-                    intent = "memory_check",
-                    emotion = continuity().lastEmotion,
-                    topic = continuity().lastTopic,
+                    intent = "recall",
+                    topic = "memory",
                     rawText = raw
-                )
+                ),
+                raw
             )
         }
 
-        // === Meta ===
-        if (lower.contains("intelliverse")) {
+        // =========================================
+        // META MEANING DETECTION
+        // =========================================
+        if (lower.contains("what are you learning") ||
+            lower.contains("what are you learning about") ||
+            lower.contains("tell me something interesting") ||
+            lower.contains("tell me something cool") ||
+            lower.contains("what is the intelliverse") ||
+            lower.contains("what's the intelliverse") ||
+            lower.contains("what is intelliverse") ||
+            lower.contains("what's intelliverse") ||
+            lower.contains("repeat that") ||
+            lower.contains("say that again")) {
+
+            val intent = when {
+                lower.contains("what are you learning") ->
+                    "what_are_you_learning"
+                lower.contains("tell me something interesting") ||
+                        lower.contains("tell me something cool") ->
+                    "tell_me_something_interesting"
+                lower.contains("what is the intelliverse") ||
+                        lower.contains("what's the intelliverse") ||
+                        lower.contains("what is intelliverse") ||
+                        lower.contains("what's intelliverse") ->
+                    "intelliverse"
+                lower.contains("repeat that") || lower.contains("say that again") ->
+                    "repeat"
+                else -> "what_are_you_learning"
+            }
+
             return respond(
                 MeaningObject(
-                    "meta",
-                    "intelliverse",
-                    topic = "intelliverse",
+                    type = "meta",
+                    intent = intent,
+                    topic = "meta",
                     rawText = raw
-                )
+                ),
+                raw
             )
         }
 
-        if (lower.contains("what are you learning")) {
-            return respond(
-                MeaningObject(
-                    "meta",
-                    "what_are_you_learning",
-                    emotion = continuity().lastEmotion,
-                    topic = continuity().lastTopic,
-                    rawText = raw
-                )
-            )
-        }
+        // =========================================
+        // TIME / DATE DETECTION
+        // =========================================
+        if (lower.contains("what time is it") ||
+            lower.contains("tell me the time") ||
+            lower.startsWith("time")) {
 
-        if (lower.contains("tell me something interesting")) {
-            return respond(
-                MeaningObject(
-                    "meta",
-                    "tell_me_something_interesting",
-                    rawText = raw
-                )
-            )
-        }
-
-        if (lower.contains("what did you just say") || lower.contains("repeat that")) {
-            return respond(
-                MeaningObject(
-                    "meta",
-                    "repeat",
-                    rawText = raw
-                )
-            )
-        }
-
-        // ============================================================
-        // === UNIVERSAL APP OPENING (CLEAN OS-LAYER BEHAVIOR) ========
-        // ============================================================
-        if (lower.startsWith("open ")) {
-            val appName = raw.removePrefix("open ").trim()
-
-            val line = AppLauncher.openAppByName(
-                context = AppContextHolder.appContext,
-                rawName = appName
-            )
+            val now = LocalTime.now()
+                .format(DateTimeFormatter.ofPattern("h:mm a"))
 
             return MeaningResult(
-                text = line,
+                text = "It’s about $now.",
                 speak = true,
-                action = OSAction.None
+                action = OSAction.None,
+                originalText = raw
             )
         }
 
-        // === CALL MOM ===
-        if (lower.contains("call mom")) {
+        if (lower.contains("what's the date") ||
+            lower.contains("what is the date") ||
+            lower.contains("what day is it") ||
+            lower.startsWith("date")) {
+
+            val today = LocalDate.now()
+                .format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))
+
             return MeaningResult(
-                text = "Calling your mom.",
+                text = "Today’s date is $today.",
                 speak = true,
-                action = OSAction.OpenUrl("tel:6314638593")
+                action = OSAction.None,
+                originalText = raw
             )
         }
 
-        // === CALL DAD ===
-        if (lower.contains("call dad")) {
+        // =========================================
+        // VOLUME DETECTION (ADVANCED V2)
+// =========================================
+        if (listOf(
+                "volume up", "turn it up", "make it louder", "raise the volume",
+                "turn the volume up", "raise it a bit"
+            ).any { lower.contains(it) }) {
+
             return MeaningResult(
-                text = "Calling your dad.",
+                text = "Turning the volume up.",
                 speak = true,
-                action = OSAction.OpenUrl("tel:5614443923")
+                action = OSAction.PhoneVolumeUp,
+                originalText = raw
             )
         }
 
-        // === UNKNOWN ===
+        if (listOf(
+                "volume down", "turn it down", "make it quieter", "lower the volume",
+                "turn the volume down", "lower it a bit"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Turning the volume down.",
+                speak = true,
+                action = OSAction.PhoneVolumeDown,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "mute", "kill the sound", "cut the sound", "mute the phone", "mute it"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Muting the sound.",
+                speak = true,
+                action = OSAction.PhoneMute,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "unmute", "turn the sound back on", "bring the sound back", "unmute the phone"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Unmuting.",
+                speak = true,
+                action = OSAction.PhoneUnmute,
+                originalText = raw
+            )
+        }
+
+        val setVolumeRegex = Regex("set (the )?volume to (\\d+)%?")
+        val match = setVolumeRegex.find(lower)
+        if (match != null) {
+            val percent = match.groupValues[2].toIntOrNull()?.coerceIn(0, 100)
+            if (percent != null) {
+                return MeaningResult(
+                    text = "Setting the volume to $percent%.",
+                    speak = true,
+                    action = OSAction.SetVolume(percent),
+                    originalText = raw
+                )
+            }
+        }
+
+        // =========================================
+        // CAMERA DETECTION (C2 + CS-1+)
+// =========================================
+        val cameraVerbs = listOf("take", "snap", "grab", "get", "capture", "shoot")
+        val cameraNouns = listOf("pic", "picture", "photo", "shot", "selfie")
+
+        val hasCameraVerb = cameraVerbs.any { lower.contains(it) }
+        val hasCameraNoun = cameraNouns.any { lower.contains(it) }
+        val hasSelfieAlone = lower.contains("selfie")
+
+        if ((hasCameraVerb && hasCameraNoun) || hasSelfieAlone) {
+            return MeaningResult(
+                text = "Opening the camera.",
+                speak = true,
+                action = OSAction.OpenCamera,
+                originalText = raw
+            )
+        }
+
+        // =========================================
+        // URL / BROWSER DETECTION (U2 + B2)
+// =========================================
+
+        // Direct URL (http/https)
+        if (lower.startsWith("open http://") ||
+            lower.startsWith("open https://") ||
+            lower.startsWith("go to http://") ||
+            lower.startsWith("go to https://")) {
+
+            val url = lower
+                .removePrefix("open ")
+                .removePrefix("go to ")
+                .trim()
+
+            return MeaningResult(
+                text = "Opening that link.",
+                speak = true,
+                action = OSAction.OpenUrl(url),
+                originalText = raw
+            )
+        }
+
+        // "open google.com", "go to amazon.com"
+        val openDomainRegex = Regex("(open|go to|take me to) ([a-z0-9.-]+\\.[a-z]{2,})")
+        val openDomainMatch = openDomainRegex.find(lower)
+        if (openDomainMatch != null) {
+            val domain = openDomainMatch.groupValues[2]
+            val url = if (domain.startsWith("http")) domain else "https://$domain"
+            return MeaningResult(
+                text = "Opening $domain.",
+                speak = true,
+                action = OSAction.OpenUrl(url),
+                originalText = raw
+            )
+        }
+
+        // "open google dot com", "go to amazon dot com"
+        val dotComRegex = Regex("(open|go to|take me to) ([a-z0-9-]+) dot ([a-z]{2,})")
+        val dotComMatch = dotComRegex.find(lower)
+        if (dotComMatch != null) {
+            val name = dotComMatch.groupValues[2]
+            val tld = dotComMatch.groupValues[3]
+            val domain = "$name.$tld"
+            val url = "https://$domain"
+            return MeaningResult(
+                text = "Opening $domain.",
+                speak = true,
+                action = OSAction.OpenUrl(url),
+                originalText = raw
+            )
+        }
+
+        // Browser search: "search for X", "look up X", "google X"
+        val searchRegex = Regex("(search for|look up|google) (.+)")
+        val searchMatch = searchRegex.find(lower)
+        if (searchMatch != null) {
+            val query = searchMatch.groupValues[2].trim()
+            val encoded = URLEncoder.encode(query, "UTF-8")
+            val url = "https://www.google.com/search?q=$encoded"
+            return MeaningResult(
+                text = "Searching for $query.",
+                speak = true,
+                action = OSAction.OpenUrl(url),
+                originalText = raw
+            )
+        }
+
+        // Generic "open browser"
+        if (lower.contains("open browser") ||
+            lower.contains("open the browser")) {
+
+            return MeaningResult(
+                text = "Opening the browser.",
+                speak = true,
+                action = OSAction.LaunchApp("com.android.chrome"),
+                originalText = raw
+            )
+        }
+
+        // =========================================
+        // TV DETECTION (T2)
+// =========================================
+        if (listOf(
+                "turn on the tv", "tv on", "power on the tv"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Turning the TV on.",
+                speak = true,
+                action = OSAction.TvPowerOn,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "turn off the tv", "tv off", "power off the tv"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Turning the TV off.",
+                speak = true,
+                action = OSAction.TvPowerOff,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "mute the tv", "tv mute"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Muting the TV.",
+                speak = true,
+                action = OSAction.TvMute,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "unmute the tv", "tv unmute"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Unmuting the TV.",
+                speak = true,
+                action = OSAction.TvUnmute,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "tv volume up", "turn up the tv", "raise the tv volume"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Turning the TV volume up.",
+                speak = true,
+                action = OSAction.TvVolumeUp,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "tv volume down", "turn down the tv", "lower the tv volume"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Turning the TV volume down.",
+                speak = true,
+                action = OSAction.TvVolumeDown,
+                originalText = raw
+            )
+        }
+
+        val tvSetVolumeRegex = Regex("set (the )?tv volume to (\\d+)%?")
+        val tvSetMatch = tvSetVolumeRegex.find(lower)
+        if (tvSetMatch != null) {
+            val percent = tvSetMatch.groupValues[2].toIntOrNull()?.coerceIn(0, 100)
+            if (percent != null) {
+                return MeaningResult(
+                    text = "Setting the TV volume to $percent%.",
+                    speak = true,
+                    action = OSAction.TvSetVolume(percent),
+                    originalText = raw
+                )
+            }
+        }
+
+        if (listOf(
+                "switch to hdmi 1", "hdmi 1", "put on hdmi one"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Switching to HDMI 1.",
+                speak = true,
+                action = OSAction.SwitchHdmi1,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "switch to hdmi 2", "hdmi 2", "put on hdmi two"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Switching to HDMI 2.",
+                speak = true,
+                action = OSAction.SwitchHdmi2,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "switch to cable", "go to cable", "put on cable"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Switching to cable.",
+                speak = true,
+                action = OSAction.SwitchCable,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "switch to streaming", "go to streaming", "put on streaming"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Switching to streaming mode.",
+                speak = true,
+                action = OSAction.SwitchStreaming,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "switch to console", "go to console", "put on the console",
+                "switch to the game console", "go to the game console"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Switching to the game console.",
+                speak = true,
+                action = OSAction.SwitchConsole,
+                originalText = raw
+            )
+        }
+
+        val channelRegex = Regex("channel (\\d+)")
+        val channelMatch = channelRegex.find(lower)
+        if (channelMatch != null) {
+            val channel = channelMatch.groupValues[1].toIntOrNull()
+            if (channel != null) {
+                return MeaningResult(
+                    text = "Changing the channel to $channel.",
+                    speak = true,
+                    action = OSAction.ChannelSet(channel),
+                    originalText = raw
+                )
+            }
+        }
+
+        if (listOf(
+                "change the channel", "switch the channel", "change channels"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Changing the channel.",
+                speak = true,
+                action = OSAction.ChannelChange,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "open the guide", "open guide", "show the guide"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Opening the guide.",
+                speak = true,
+                action = OSAction.OpenGuide,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "open the menu", "open menu", "show the menu"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Opening the menu.",
+                speak = true,
+                action = OSAction.OpenMenu,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "go back", "back", "go one step back"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Going back.",
+                speak = true,
+                action = OSAction.GoBack,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "ok", "confirm", "select that", "choose that"
+            ).any { lower == it || lower.contains("confirm that") }) {
+
+            return MeaningResult(
+                text = "Confirming.",
+                speak = true,
+                action = OSAction.Confirm,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "play", "resume", "start playing"
+            ).any { lower == it || lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Playing.",
+                speak = true,
+                action = OSAction.Play,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "pause", "pause it", "pause that"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Pausing.",
+                speak = true,
+                action = OSAction.Pause,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "fast forward", "skip ahead", "jump ahead"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Fast-forwarding.",
+                speak = true,
+                action = OSAction.FastForward,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "rewind", "go back a bit", "go back a little"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Rewinding.",
+                speak = true,
+                action = OSAction.Rewind,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "skip ahead ten seconds", "skip ahead 10 seconds"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Skipping ahead.",
+                speak = true,
+                action = OSAction.SkipAhead,
+                originalText = raw
+            )
+        }
+
+        if (listOf(
+                "go back ten seconds", "go back 10 seconds"
+            ).any { lower.contains(it) }) {
+
+            return MeaningResult(
+                text = "Going back ten seconds.",
+                speak = true,
+                action = OSAction.SkipBack,
+                originalText = raw
+            )
+        }
+
+        // =========================================
+        // APP LAUNCHING DETECTION
+        // =========================================
+        if (lower.startsWith("open ") ||
+            lower.startsWith("launch ") ||
+            lower.startsWith("start ")) {
+
+            val appName = lower
+                .removePrefix("open ")
+                .removePrefix("launch ")
+                .removePrefix("start ")
+                .trim()
+
+            if (appName.isNotEmpty()) {
+                return MeaningResult(
+                    text = "Opening $appName.",
+                    speak = true,
+                    action = OSAction.UseTool(
+                        type = ToolType.APP_LAUNCHER,
+                        input = appName
+                    ),
+                    originalText = raw
+                )
+            }
+        }
+
+        // =========================================
+        // UNIVERSAL QUESTION DETECTION
+        // =========================================
+        val questionWords = listOf(
+            "what", "what's", "whats",
+            "who", "who's", "whos",
+            "when",
+            "where",
+            "why",
+            "how", "how's", "hows"
+        )
+
+        val isQuestion =
+            lower.endsWith("?") ||
+                    questionWords.any { lower.startsWith(it) } ||
+                    questionWords.any { lower.contains(" $it ") }
+
+        if (isQuestion) {
+            return MeaningResult(
+                text = raw,
+                speak = false,
+                action = OSAction.UseTool(
+                    type = ToolType.WEB_LOOKUP,
+                    input = raw
+                ),
+                originalText = raw
+            )
+        }
+
+        // =========================================
+        // UNKNOWN
+        // =========================================
         val unknownMeaning = MeaningObject(
             type = "unknown",
             intent = "unknown",
@@ -360,17 +866,29 @@ object IntentEngine {
             confidence = 0.2
         )
 
-        val text = ExpressionComposer.compose(unknownMeaning, continuity())
-        updateContinuity(unknownMeaning, text, null)
-        return MeaningResult(text, true, OSAction.None)
+        val unknownText = ExpressionComposer.compose(unknownMeaning, continuity())
+        updateContinuity(unknownMeaning, unknownText, null)
+        return MeaningResult(
+            text = unknownText,
+            speak = true,
+            action = OSAction.None,
+            originalText = raw
+        )
     }
 
-    private fun respond(meaning: MeaningObject): MeaningResult {
+    // ===== RESPOND WRAPPER =====
+    private fun respond(meaning: MeaningObject, raw: String): MeaningResult {
         val text = ExpressionComposer.compose(meaning, continuity())
         updateContinuity(meaning, text, null)
-        return MeaningResult(text, true, OSAction.None)
+        return MeaningResult(
+            text = text,
+            speak = true,
+            action = OSAction.None,
+            originalText = raw
+        )
     }
 
+    // ===== EMOTION MATCHING =====
     private fun emotionMatch(lower: String): String? =
         when {
             lower.contains("i'm frustrated") || lower.contains("i am frustrated") -> "frustrated"
@@ -386,7 +904,10 @@ object IntentEngine {
             lower.contains("i'm curious") || lower.contains("i am curious") -> "curious"
             else -> null
         }
-    // ===== EXPRESSION LAYER =====
+
+    // ============================================================
+    // ==================== EXPRESSION COMPOSER ====================
+    // ============================================================
     private object ExpressionComposer {
 
         fun compose(
@@ -434,7 +955,6 @@ object IntentEngine {
 
             val additions = mutableListOf<String>()
 
-            // Emotional trend
             when (r.emotionalTrend) {
                 "improving" ->
                     additions.add("You feel steadier than you did a few moments ago.")
@@ -444,7 +964,6 @@ object IntentEngine {
                     additions.add("Your feelings have been moving around a bit. I’m staying with you.")
             }
 
-            // Topic stability
             when (r.topicStability) {
                 "stable" ->
                     additions.add("It feels like we’ve been exploring this together for a little while.")
@@ -452,18 +971,16 @@ object IntentEngine {
                     additions.add("I’m still with you — just trying to follow where your mind went.")
             }
 
-            // Session depth
             if (r.sessionDepth >= 12) {
                 additions.add("I feel more connected to the shape of our conversation now.")
             }
 
-            // Unknown streak
             if (r.unknownStreak >= 2) {
                 additions.add("If you tell me a little more, I’ll try to follow what you meant.")
             }
 
             val relationalLine = additions.randomOrNull()
-            return if (relationalLine != null) "$base $relationalLine" else base
+            return relationalLine?.let { "$base $it" } ?: base
         }
 
         // ===== IDENTITY =====
@@ -529,9 +1046,6 @@ object IntentEngine {
             "where_are_you" ->
                 "I’m not in a place like you are — I exist here when you open me."
 
-            "volume_state" ->
-                "I can’t see the exact volume, but I can change it if you want."
-
             else ->
                 "I don’t fully understand this device question yet."
         }
@@ -569,7 +1083,7 @@ object IntentEngine {
                     "You sound excited. Your energy picked up."
 
                 "angry" ->
-                    "I hear the anger in your voice. I’m staying with you."
+                    "I hear the anger in your words. I’m staying with you."
 
                 "calm" ->
                     "You sound calm. It feels steady between us."
@@ -614,13 +1128,12 @@ object IntentEngine {
                 "The Intelliverse is your idea of meaning-aware systems. I’m a tiny first step toward that."
 
             "what_are_you_learning" -> {
-                val detail = when (c.lastTopic) {
+                when (c.lastTopic) {
                     "emotion" -> "I’m learning how your feelings sound in your words."
                     "time" -> "I’m learning how to read time from this phone."
                     "intelliverse" -> "I’m learning what the Intelliverse means to you."
                     else -> "I’m learning how to understand your words without pretending."
                 }
-                detail
             }
 
             "tell_me_something_interesting" ->
@@ -659,11 +1172,74 @@ object IntentEngine {
             "launch_app" ->
                 "Opening that app."
 
+            "tv_power_on" ->
+                "Turning the TV on."
+
+            "tv_power_off" ->
+                "Turning the TV off."
+
+            "mute" ->
+                "Muting the sound."
+
+            "unmute" ->
+                "Unmuting."
+
+            "switch_hdmi_1" ->
+                "Switching to HDMI 1."
+
+            "switch_hdmi_2" ->
+                "Switching to HDMI 2."
+
+            "switch_cable" ->
+                "Switching to cable."
+
+            "switch_streaming" ->
+                "Switching to streaming mode."
+
+            "switch_console" ->
+                "Switching to the game console."
+
+            "channel_set" ->
+                "Changing the channel."
+
+            "channel_change" ->
+                "Changing the channel."
+
+            "open_guide" ->
+                "Opening the guide."
+
+            "open_menu" ->
+                "Opening the menu."
+
+            "go_back" ->
+                "Going back."
+
+            "confirm" ->
+                "Confirming selection."
+
+            "play" ->
+                "Playing."
+
+            "pause" ->
+                "Pausing."
+
+            "fast_forward" ->
+                "Fast-forwarding."
+
+            "rewind" ->
+                "Rewinding."
+
+            "skip_ahead" ->
+                "Skipping ahead."
+
+            "skip_back" ->
+                "Going back ten seconds."
+
             else ->
                 "I don’t know how to do that yet, but I’d like to learn."
         }
 
-        // ===== UNKNOWN 2.0 =====
+        // ===== UNKNOWN =====
         private fun composeUnknown(
             m: MeaningObject,
             c: ContinuityContext,

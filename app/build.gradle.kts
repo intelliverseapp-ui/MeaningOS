@@ -1,22 +1,26 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.compose)
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10"
 }
 
 android {
     namespace = "com.example.meaningosapp"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.meaningosapp"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // ⭐ Expose your Google Cloud STT key to BuildConfig
+        buildConfigField(
+            "String",
+            "GOOGLE_CLOUD_STT_API_KEY",
+            "\"${project.properties["GOOGLE_CLOUD_STT_API_KEY"]}\""
+        )
     }
 
     buildTypes {
@@ -28,29 +32,70 @@ android {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
+
     buildFeatures {
         compose = true
+        buildConfig = true   // ⭐ REQUIRED FIX — enables BuildConfig fields
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.3"
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.activity:activity-compose:1.8.2")
+    implementation("androidx.compose.ui:ui:1.5.3")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.5.3")
+    implementation("androidx.compose.material3:material3:1.1.2")
+
+    // ⭐ FIX: Compose ViewModel integration
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+
+    // Kotlin Serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+
+    // Ktor 2.x Client
+    implementation("io.ktor:ktor-client-core:2.3.7")
+    implementation("io.ktor:ktor-client-okhttp:2.3.7")
+    implementation("io.ktor:ktor-client-logging:2.3.7")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
+
+    // USB Serial library
+    implementation("com.github.mik3y:usb-serial-for-android:3.6.0")
+
+    // ⭐ ML Kit removed — this was the failing dependency
+    // implementation("com.google.mlkit:speech-recognition:16.0.0-beta3")
+
+    // -----------------------------
+    // ⭐ Google Cloud Speech gRPC
+    // -----------------------------
+    implementation("com.google.cloud:google-cloud-speech:4.6.0")
+
+    // gRPC core
+    implementation("io.grpc:grpc-okhttp:1.63.0")
+    implementation("io.grpc:grpc-protobuf-lite:1.63.0")
+    implementation("io.grpc:grpc-stub:1.63.0")
+
+    // Kotlin coroutines support for gRPC
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+
+    debugImplementation("androidx.compose.ui:ui-tooling:1.5.3")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.5.3")
+}
+// Force protobuf-javalite and exclude protobuf-java
+configurations.all {
+    resolutionStrategy.force("com.google.protobuf:protobuf-javalite:3.25.1")
+    exclude(group = "com.google.protobuf", module = "protobuf-java")
 }

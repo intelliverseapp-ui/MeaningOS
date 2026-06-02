@@ -1,0 +1,364 @@
+{
+  "version": "1.0.1",
+  "layers": [
+
+    {
+      "layer": 0,
+      "name": "Initialization",
+      "primitives": [
+        {
+          "name": "tabula.plena",
+          "definition": "The pre-semantic fullness — the undifferentiated potential from which all structure emerges.",
+          "dependencies": []
+        },
+        {
+          "name": "seed.entropy",
+          "definition": "The irreducible minimum of disorder required to break symmetry and initiate differentiation.",
+          "dependencies": ["tabula.plena"]
+        },
+        {
+          "name": "init.clock",
+          "definition": "The activation of sequencing — the primitive that establishes before and after.",
+          "dependencies": ["seed.entropy"]
+        },
+        {
+          "name": "init.identity",
+          "definition": "The first act of distinction — the capacity to differentiate this from not-this.",
+          "dependencies": ["init.clock"]
+        },
+        {
+          "name": "init.boundary",
+          "definition": "The establishment of inside and outside — the primitive that creates containment and separation.",
+          "dependencies": ["init.identity"]
+        }
+      ]
+    },
+
+    {
+      "layer": 1,
+      "name": "Geometry",
+      "primitives": [
+        { "name": "geometric_vacuum", "definition": "The absence of any geometric structure.", "dependencies": ["init.boundary"] },
+        { "name": "node", "definition": "The minimal locus of semantic state; precursor to a geometric point.", "dependencies": ["geometric_vacuum"] },
+        { "name": "point", "definition": "A single exact location with no size or extension.", "dependencies": ["node"] },
+        { "name": "line", "definition": "The shortest path between two points.", "dependencies": ["point"] },
+        { "name": "plane", "definition": "A flat, two-dimensional surface.", "dependencies": ["line"] },
+        { "name": "volume", "definition": "A three-dimensional region of space.", "dependencies": ["plane"] },
+        { "name": "boundary", "definition": "A limit separating inside from outside.", "dependencies": ["volume"] },
+        { "name": "membrane", "definition": "A flexible boundary capable of filtering or transmitting effects.", "dependencies": ["boundary"] },
+        { "name": "direction", "definition": "An oriented path along which movement can occur.", "dependencies": ["point"] },
+        { "name": "curvature", "definition": "Deviation from straightness or flatness.", "dependencies": ["line"] },
+        { "name": "flatness", "definition": "Zero curvature.", "dependencies": ["curvature"] },
+        { "name": "well", "definition": "A local minimum in geometric or energetic structure.", "dependencies": ["volume"] }
+      ]
+    },
+
+    {
+      "layer": 2,
+      "name": "Logic",
+      "primitives": [
+        { "name": "logical_vacuum", "definition": "Absence of any logical state or evaluable condition.", "dependencies": ["init.identity"] },
+        { "name": "true", "definition": "Affirms a proposition.", "dependencies": ["logical_vacuum"] },
+        { "name": "false", "definition": "Contradicts a proposition.", "dependencies": ["logical_vacuum"] },
+        { "name": "unknown", "definition": "Truth value cannot be determined.", "dependencies": ["logical_vacuum"] },
+        { "name": "superposition", "definition": "Multiple truth states coexist until resolved.", "dependencies": ["unknown"] },
+        { "name": "valid", "definition": "Follows correct logical form.", "dependencies": ["true", "false"] },
+        { "name": "invalid", "definition": "Violates logical form.", "dependencies": ["valid"] },
+        { "name": "defined", "definition": "Meaning or value explicitly established.", "dependencies": ["init.identity"] },
+        { "name": "undefined", "definition": "No assigned meaning or value.", "dependencies": ["defined"] },
+        { "name": "permanently_unresolvable", "definition": "Can never be evaluated or resolved.", "dependencies": ["unknown"] }
+      ]
+    },
+
+    {
+      "layer": 3,
+      "name": "State",
+      "primitives": [
+        { "name": "unidentified", "definition": "State not yet determined.", "dependencies": ["init.identity"] },
+        { "name": "existence", "definition": "Being present or instantiated.", "dependencies": ["unidentified"] },
+        { "name": "absence", "definition": "Not present or instantiated.", "dependencies": ["existence"] },
+        { "name": "persistence", "definition": "Continuation of a state over time.", "dependencies": ["existence", "init.clock"] },
+        { "name": "availability", "definition": "Can be accessed or acted upon.", "dependencies": ["existence"] },
+        { "name": "unavailability", "definition": "Cannot be accessed or acted upon.", "dependencies": ["availability"] },
+        { "name": "ephemerality", "definition": "Exists only briefly.", "dependencies": ["persistence"] },
+        { "name": "ground", "definition": "Baseline state.", "dependencies": ["existence"] },
+        { "name": "basin", "definition": "Region of state-space toward which dynamics flow.", "dependencies": ["ground"] },
+        { "name": "multiplicity", "definition": "Multiple coexisting states.", "dependencies": ["existence"] },
+        { "name": "confluence", "definition": "Merging of multiple states.", "dependencies": ["multiplicity"] },
+        { "name": "stability_gradient", "definition": "Rate of stability change over time.", "dependencies": ["persistence"] },
+        { "name": "resource_account", "definition": "Internal resource level.", "dependencies": ["existence"] },
+        { "name": "surplus_margin", "definition": "Buffer above viability threshold.", "dependencies": ["resource_account"] },
+        { "name": "surplus_conversion", "definition": "Transforming surplus into growth or repair.", "dependencies": ["surplus_margin"] }
+      ]
+    },
+
+    {
+      "layer": 4,
+      "name": "Music",
+      "primitives": [
+        { "name": "silence", "definition": "Absence of sound.", "dependencies": ["logical_vacuum"] },
+        { "name": "pitch", "definition": "Perceived frequency of sound.", "dependencies": ["silence"] },
+        { "name": "beat", "definition": "Basic pulse of musical time.", "dependencies": ["init.clock"] },
+        { "name": "duration", "definition": "Length of time a sound is sustained.", "dependencies": ["beat"] },
+        { "name": "tempo", "definition": "Speed of beats.", "dependencies": ["beat"] },
+        { "name": "rhythm", "definition": "Pattern of sounds and silences.", "dependencies": ["beat"] },
+        { "name": "meter", "definition": "Grouping of beats.", "dependencies": ["rhythm"] },
+        { "name": "timbre", "definition": "Color or texture of sound.", "dependencies": ["pitch"] },
+        { "name": "dynamics", "definition": "Loudness variation.", "dependencies": ["timbre"] },
+        { "name": "articulation", "definition": "How a note is initiated and released.", "dependencies": ["timbre"] },
+        { "name": "melody", "definition": "Sequence of pitches.", "dependencies": ["pitch"] },
+        { "name": "harmony", "definition": "Multiple pitches sounding together.", "dependencies": ["melody"] },
+        { "name": "form", "definition": "Overall musical structure.", "dependencies": ["harmony"] }
+      ]
+    },
+
+    {
+      "layer": 5,
+      "name": "Experience",
+      "primitives": [
+        { "name": "experiential_vacuum", "definition": "Absence of felt state.", "dependencies": ["init.identity"] },
+        { "name": "pain", "definition": "Negative experiential signal of harm.", "dependencies": ["experiential_vacuum"] },
+        { "name": "pleasure", "definition": "Positive experiential signal of reward.", "dependencies": ["experiential_vacuum"] },
+        { "name": "fear", "definition": "Anticipatory negative state triggered by threat.", "dependencies": ["pain"] },
+        { "name": "trust", "definition": "Confidence in stability or safety.", "dependencies": ["pleasure"] },
+        { "name": "love", "definition": "Deep positive attachment.", "dependencies": ["trust"] },
+        { "name": "sex", "definition": "Reproductive drive or arousal.", "dependencies": ["pleasure"] },
+        { "name": "attachment", "definition": "Persistent emotional bond.", "dependencies": ["love"] },
+        { "name": "curiosity", "definition": "Drive for exploration or information.", "dependencies": ["trust"] },
+        { "name": "anger", "definition": "Reactive state triggered by obstruction.", "dependencies": ["pain"] },
+        { "name": "hungry", "definition": "Energy deficit signal.", "dependencies": ["pain"] },
+        { "name": "tired", "definition": "Need for rest.", "dependencies": ["pain"] },
+        { "name": "sick", "definition": "Internal disruption or distress.", "dependencies": ["pain"] },
+        { "name": "horny", "definition": "Sexual arousal.", "dependencies": ["sex"] },
+        { "name": "thirsty", "definition": "Fluid imbalance signal.", "dependencies": ["hungry"] },
+        { "name": "smell", "definition": "Chemical sensory experience.", "dependencies": ["experiential_vacuum"] },
+        { "name": "anticipatory_resolution", "definition": "Waiting for a single outcome among many.", "dependencies": ["fear"] },
+        { "name": "humor", "definition": "Positive state from resolving incongruity.", "dependencies": ["pleasure"] },
+        { "name": "surprise", "definition": "Sudden shift in awareness.", "dependencies": ["fear", "pleasure"] }
+      ]
+    },
+
+    {
+      "layer": 6,
+      "name": "Prosody",
+      "primitives": [
+        { "name": "contour", "definition": "Shape of semantic movement across time.", "dependencies": ["pitch"] },
+        { "name": "stress", "definition": "Localized emphasis marking semantic weight.", "dependencies": ["contour"] },
+        { "name": "tone", "definition": "Stable pitch region encoding stance.", "dependencies": ["pitch"] },
+        { "name": "inflection", "definition": "Directional pitch shifts signaling transition.", "dependencies": ["tone"] },
+        { "name": "cadence", "definition": "Pacing pattern governing release of meaning.", "dependencies": ["init.clock"] },
+        { "name": "pause", "definition": "Intentional temporal void.", "dependencies": ["cadence"] },
+        { "name": "flow", "definition": "Continuity of semantic motion.", "dependencies": ["cadence"] },
+        { "name": "onset", "definition": "Semantic entry vector.", "dependencies": ["flow"] },
+        { "name": "offset", "definition": "Semantic exit vector.", "dependencies": ["flow"] },
+        { "name": "tension", "definition": "Prosodic pressure indicating unresolved load.", "dependencies": ["inflection"] },
+        { "name": "release", "definition": "Prosodic decompression marking resolution.", "dependencies": ["tension"] },
+        { "name": "color", "definition": "Timbre-based shaping encoding stance.", "dependencies": ["timbre"] },
+        { "name": "spacing", "definition": "Distribution of micro-timing between units.", "dependencies": ["cadence"] }
+      ]
+    },
+
+    {
+      "layer": 7,
+      "name": "Information",
+      "primitives": [
+        { "name": "symbol", "definition": "A unit that stands for something else.", "dependencies": ["init.identity"] },
+        { "name": "signal", "definition": "Information relevant to goals or models.", "dependencies": ["symbol"] },
+        { "name": "noise", "definition": "Variation not contributing to goals.", "dependencies": ["signal"] },
+        { "name": "channel", "definition": "Medium through which information is transmitted.", "dependencies": ["signal"] },
+        { "name": "encoding", "definition": "Scheme used to represent information.", "dependencies": ["symbol"] },
+        { "name": "decoding", "definition": "Recovering information from representation.", "dependencies": ["encoding"] },
+        { "name": "redundancy", "definition": "Repetition to increase reliability.", "dependencies": ["signal"] },
+        { "name": "compression", "definition": "Reducing representation size.", "dependencies": ["encoding"] },
+        { "name": "salience_weight", "definition": "Relative importance assigned to information.", "dependencies": ["signal"] },
+        { "name": "information_gap", "definition": "Recognized absence of needed information.", "dependencies": ["signal"] },
+        { "name": "uncertainty_estimate", "definition": "Confidence or uncertainty representation.", "dependencies": ["information_gap"] },
+        { "name": "confidence_weight", "definition": "Influence after accounting for uncertainty.", "dependencies": ["uncertainty_estimate"] },
+        { "name": "signal_priority_shift", "definition": "Dynamic reordering of information priorities.", "dependencies": ["signal"] },
+        { "name": "attention_shift_trigger", "definition": "Condition reallocating attention.", "dependencies": ["signal_priority_shift"] },
+        { "name": "information_flow", "definition": "Movement or transformation of information.", "dependencies": ["channel"] }
+      ]
+    },
+
+    {
+      "layer": 8,
+      "name": "Relation",
+      "primitives": [
+        { "name": "difference", "definition": "Two things are not the same.", "dependencies": ["init.identity"] },
+        { "name": "sameness", "definition": "Two things are identical or equivalent.", "dependencies": ["difference"] },
+        { "name": "containment", "definition": "One thing inside another.", "dependencies": ["boundary"] },
+        { "name": "separation", "definition": "Two things apart or not connected.", "dependencies": ["boundary"] },
+        { "name": "order", "definition": "Before/after or higher/lower relations.", "dependencies": ["init.clock"] },
+        { "name": "connection", "definition": "Link or interaction between things.", "dependencies": ["order"] }
+      ]
+    },
+
+    {
+      "layer": 9,
+      "name": "Environment",
+      "primitives": [
+        { "name": "environmental_vacuum", "definition": "Absence of external structure.", "dependencies": ["init.boundary"] },
+        { "name": "medium", "definition": "Substance or field through which interactions occur.", "dependencies": ["environmental_vacuum"] },
+        { "name": "field", "definition": "Distributed influence affecting entities.", "dependencies": ["medium"] },
+        { "name": "gradient", "definition": "Directional difference in conditions.", "dependencies": ["field"] },
+        { "name": "affordance", "definition": "Environmental feature enabling action.", "dependencies": ["gradient"] },
+        { "name": "constraint_source", "definition": "External origin of limits or pressures.", "dependencies": ["gradient"] },
+        { "name": "perturbation", "definition": "Disturbance from environment.", "dependencies": ["field"] },
+        { "name": "comm_channel", "definition": "Pathway through which signals or resources are transmitted.", "dependencies": ["medium"] }
+      ]
+    },
+    {
+      "layer": 10,
+      "name": "Process",
+      "primitives": [
+        { "name": "intrinsic_duration", "definition": "Inherent length of a process.", "dependencies": ["init.clock"] },
+        { "name": "physical_time", "definition": "Time measured by physical change.", "dependencies": ["intrinsic_duration"] },
+        { "name": "semantic_time", "definition": "Time as experienced or interpreted.", "dependencies": ["intrinsic_duration"] },
+        { "name": "quantum_transition_time", "definition": "Time scale of quantum state changes.", "dependencies": ["intrinsic_duration"] },
+        { "name": "jiggle", "definition": "Small stochastic micro-fluctuations.", "dependencies": ["intrinsic_duration"] },
+        { "name": "event", "definition": "Discrete occurrence marking change.", "dependencies": ["intrinsic_duration"] },
+        { "name": "transition", "definition": "Movement from one state to another.", "dependencies": ["event"] },
+        { "name": "flow", "definition": "Continuous progression through states.", "dependencies": ["transition"] },
+        { "name": "cycle", "definition": "Repeating sequence of states.", "dependencies": ["flow"] },
+        { "name": "termination", "definition": "End point of a process.", "dependencies": ["flow"] },
+        { "name": "toss", "definition": "Nondeterministic branching event.", "dependencies": ["transition"] },
+        { "name": "lock", "definition": "Constraint preventing change.", "dependencies": ["transition"] },
+        { "name": "creep", "definition": "Slow incremental change.", "dependencies": ["flow"] },
+        { "name": "branch", "definition": "Divergence into multiple paths.", "dependencies": ["transition"] },
+        { "name": "merge", "definition": "Convergence of paths.", "dependencies": ["branch"] },
+        { "name": "constraint_lifetime", "definition": "Duration a constraint remains active.", "dependencies": ["lock"] },
+        { "name": "constraint_pressure", "definition": "Intensity pushing a process toward a particular transition or outcome.", "dependencies": ["constraint_lifetime"] },
+        { "name": "prethermal_plateau", "definition": "Metastable intermediate regime before full thermalization.", "dependencies": ["flow"] },
+        { "name": "temporal_horizon", "definition": "Time-scale or planning window used for prediction or regulation.", "dependencies": ["flow"] }
+      ]
+    },
+
+    {
+      "layer": 11,
+      "name": "Agency",
+      "primitives": [
+        { "name": "observer", "definition": "Capacity to perceive or register a situation.", "dependencies": ["init.identity"] },
+        { "name": "actor", "definition": "Capacity to take action or exert influence.", "dependencies": ["observer"] },
+        { "name": "commitment", "definition": "Sustained binding to a chosen direction or intention.", "dependencies": ["actor"] },
+        { "name": "choice", "definition": "Selection among multiple possible actions or paths.", "dependencies": ["actor"] },
+        { "name": "responsibility", "definition": "Ownership of consequences of action.", "dependencies": ["choice"] },
+        { "name": "authority", "definition": "Power or recognized right to act or decide.", "dependencies": ["responsibility"] },
+        { "name": "intention", "definition": "Internal aim or purpose guiding action.", "dependencies": ["observer"] },
+        { "name": "stance", "definition": "Posture toward acting — leaning toward, away from, or neutral.", "dependencies": ["intention"] },
+        { "name": "resolution_selection", "definition": "Choosing which instance to resolve when only one can resolve.", "dependencies": ["choice"] },
+        { "name": "goal_metric", "definition": "Formalized objective or value function.", "dependencies": ["intention"] },
+        { "name": "goal_conflict", "definition": "Improving one goal_metric worsens another.", "dependencies": ["goal_metric"] },
+        { "name": "goal_alignment", "definition": "Improving one goal_metric supports or does not harm others.", "dependencies": ["goal_metric"] },
+        { "name": "conflict_resolution_policy", "definition": "Rule set determining how competing goal_metrics are resolved.", "dependencies": ["goal_conflict"] }
+      ]
+    },
+
+    {
+      "layer": 12,
+      "name": "System",
+      "primitives": [
+        { "name": "interface", "definition": "Point of interaction between a system and its environment.", "dependencies": ["boundary"] },
+        { "name": "protocol", "definition": "Rules governing interactions across an interface.", "dependencies": ["interface"] },
+        { "name": "state-machine", "definition": "Structured set of states and transitions defining system behavior.", "dependencies": ["protocol"] },
+        { "name": "model_scope", "definition": "Range of conditions in which a model is valid.", "dependencies": ["state-machine"] },
+        { "name": "feedback", "definition": "Information returned to the system about effects of its actions.", "dependencies": ["interface"] },
+        { "name": "failure", "definition": "Breakdown preventing intended function.", "dependencies": ["feedback"] },
+        { "name": "recovery", "definition": "Restoring function after failure.", "dependencies": ["failure"] },
+        { "name": "boundary", "definition": "Dividing line separating system from environment.", "dependencies": ["init.boundary"] },
+        { "name": "boundary_integrity", "definition": "Condition preserving coherence of a system’s boundary.", "dependencies": ["boundary"] },
+        { "name": "input/output", "definition": "Channels through which information or resources enter or leave.", "dependencies": ["interface"] },
+        { "name": "configural_cohesion", "definition": "Degree to which components form a unified whole.", "dependencies": ["boundary"] },
+        { "name": "local_constraint", "definition": "Rule applying to a specific subsystem or region.", "dependencies": ["constraint_source"] },
+        { "name": "constraint_memory", "definition": "Stored constraints persisting across operations.", "dependencies": ["local_constraint"] },
+        { "name": "constraint_decay", "definition": "Weakening or loss of constraints over time.", "dependencies": ["constraint_memory"] },
+        { "name": "constraint_field", "definition": "Distributed pattern of constraints shaping behavior.", "dependencies": ["local_constraint"] },
+        { "name": "constraint_propagation", "definition": "Transmission of constraints across components.", "dependencies": ["constraint_field"] },
+        { "name": "propagation_limit", "definition": "Maximum reach of a propagating influence.", "dependencies": ["constraint_propagation"] },
+        { "name": "constraint_saturation", "definition": "Point at which additional constraints no longer change behavior.", "dependencies": ["constraint_field"] },
+        { "name": "constraint_release", "definition": "Removal or lifting of constraints.", "dependencies": ["constraint_saturation"] },
+        { "name": "constraint_dynamics", "definition": "Evolution of constraints over time.", "dependencies": ["constraint_field"] },
+        { "name": "identity_token", "definition": "Stable identifier persisting across decomposition or transformation.", "dependencies": ["init.identity"] },
+        { "name": "correlation_tuning", "definition": "Adjusting relationships between variables to improve performance.", "dependencies": ["feedback"] },
+        { "name": "correlation_locking", "definition": "Stabilizing relationships so they remain fixed under change.", "dependencies": ["correlation_tuning"] }
+      ]
+    },
+
+    {
+      "layer": 13,
+      "name": "Biology",
+      "primitives": [
+        { "name": "energy", "definition": "Capacity to perform biological work or sustain life.", "dependencies": ["resource_account"] },
+        { "name": "reproduction", "definition": "Ability to generate new organisms or copies.", "dependencies": ["energy"] },
+        { "name": "homeostasis", "definition": "Regulation of internal stability.", "dependencies": ["stability_regulation"] },
+        { "name": "growth", "definition": "Increase in size, complexity, or capacity.", "dependencies": ["energy"] },
+        { "name": "repair_maintenance", "definition": "Restoration and upkeep of structure and function.", "dependencies": ["energy"] },
+        { "name": "sensing_response", "definition": "Detection of stimuli and corresponding reaction.", "dependencies": ["environmental_input"] },
+        { "name": "stability_regulation", "definition": "Active management of dynamic behavior to stay within viable attractors.", "dependencies": ["homeostasis"] }
+      ]
+    },
+
+    {
+      "layer": 14,
+      "name": "Meta",
+      "primitives": [
+        { "name": "semantic_vacuum", "definition": "Absence of meaning or semantic structure.", "dependencies": ["init.identity"] },
+        { "name": "abstraction", "definition": "Removing detail to reveal higher-level structure.", "dependencies": ["semantic_vacuum"] },
+        { "name": "concretization", "definition": "Adding detail to make an idea specific.", "dependencies": ["abstraction"] },
+        { "name": "composition", "definition": "Combining elements into a larger whole.", "dependencies": ["concretization"] },
+        { "name": "decomposition", "definition": "Breaking a whole into parts.", "dependencies": ["composition"] },
+        { "name": "coherence_break", "definition": "Disruption in internal consistency.", "dependencies": ["composition"] },
+        { "name": "global_coherence_signal", "definition": "System-wide indicator of alignment.", "dependencies": ["coherence_break"] },
+        { "name": "semantic_alignment", "definition": "Ensures meanings remain mutually consistent.", "dependencies": ["global_coherence_signal"] },
+        { "name": "verification", "definition": "Checking correctness or alignment.", "dependencies": ["semantic_alignment"] },
+        { "name": "generalization", "definition": "Extending a pattern across contexts.", "dependencies": ["abstraction"] },
+        { "name": "specialization", "definition": "Narrowing a pattern to a specific case.", "dependencies": ["generalization"] },
+        { "name": "evaluation", "definition": "Assessing quality or correctness.", "dependencies": ["verification"] },
+        { "name": "optimization", "definition": "Improving structure or performance.", "dependencies": ["evaluation"] },
+        { "name": "resolution_limit", "definition": "Scale at which structure becomes inaccessible.", "dependencies": ["abstraction"] },
+        { "name": "irreversible_resolution", "definition": "A resolved state that cannot be undone.", "dependencies": ["resolution_limit"] },
+        { "name": "adaptation_rate", "definition": "Speed at which structures update.", "dependencies": ["optimization"] },
+        { "name": "adaptation_ceiling", "definition": "Upper bound on safe adaptation.", "dependencies": ["adaptation_rate"] },
+        { "name": "degradation_drift", "definition": "Gradual loss of performance without optimization.", "dependencies": ["adaptation_rate"] },
+        { "name": "degradation_resistance", "definition": "Tendency to resist decay.", "dependencies": ["degradation_drift"] }
+      ]
+    },
+
+    {
+      "layer": 15,
+      "name": "Survival Loop",
+      "primitives": [
+        { "name": "environmental_input", "definition": "Incoming conditions or signals from the environment.", "dependencies": ["medium"] },
+        { "name": "internal_variable", "definition": "Internal parameter tracking system condition.", "dependencies": ["environmental_input"] },
+        { "name": "viability_threshold", "definition": "Minimum condition required for continued existence.", "dependencies": ["internal_variable"] },
+        { "name": "viability_margin", "definition": "Buffer between current viability and threshold.", "dependencies": ["viability_threshold"] },
+        { "name": "threat_estimate", "definition": "Assessment of potential harm.", "dependencies": ["environmental_input"] },
+        { "name": "opportunity_estimate", "definition": "Assessment of potential benefit.", "dependencies": ["environmental_input"] },
+        { "name": "risk_gradient", "definition": "Rate at which threat/opportunity changes.", "dependencies": ["threat_estimate", "opportunity_estimate"] },
+        { "name": "selection_policy", "definition": "Rule set determining chosen action.", "dependencies": ["risk_gradient"] },
+        { "name": "regulatory_action", "definition": "Adjustment made to maintain viability.", "dependencies": ["selection_policy"] },
+        { "name": "regulatory_floor", "definition": "Minimum regulatory action to prevent irreversible loss.", "dependencies": ["regulatory_action"] },
+        { "name": "survival_memory", "definition": "Stored information about past threats and outcomes.", "dependencies": ["internal_variable"] },
+        { "name": "predictive_model", "definition": "Internal model anticipating future states.", "dependencies": ["survival_memory"] },
+        { "name": "error_signal", "definition": "Difference between expected and actual outcomes.", "dependencies": ["predictive_model"] },
+        { "name": "recovery_drive", "definition": "Tendency to restore conditions after deviation.", "dependencies": ["error_signal"] },
+        { "name": "homeostatic_balance", "definition": "Dynamic equilibrium maintaining internal stability.", "dependencies": ["recovery_drive"] },
+        { "name": "tradeoff_policy", "definition": "Allocates resources across competing goals.", "dependencies": ["selection_policy"] },
+        { "name": "sacrifice_threshold", "definition": "Point where one goal is permanently reduced to preserve another.", "dependencies": ["tradeoff_policy"] }
+      ]
+    },
+
+    {
+      "layer": 16,
+      "name": "Statistical Dimensional Dynamics",
+      "primitives": [
+        { "name": "statistical_compression", "definition": "Reduction of effective state-space by collapsing configurations.", "dependencies": ["multiplicity"] },
+        { "name": "statistical_expansion", "definition": "Increase of effective state-space by unlocking new states.", "dependencies": ["statistical_compression"] },
+        { "name": "exchange_phase_defect", "definition": "Topological alteration of identity under exchange.", "dependencies": ["statistical_expansion"] },
+        { "name": "dimensional_frustration", "definition": "Blocking or suppression of a natural degree of freedom.", "dependencies": ["exchange_phase_defect"] },
+        { "name": "dimensional_liberation", "definition": "Release of a previously blocked degree of freedom.", "dependencies": ["dimensional_frustration"] }
+      ]
+    }
+
+  ]
+}
+
