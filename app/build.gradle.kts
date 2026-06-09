@@ -85,7 +85,8 @@ protobuf {
     generateProtoTasks {
         all().forEach { task ->
             task.builtins {
-                create("java") { }
+                // FULL JAVA, NOT LITE
+                create("java")
             }
             task.plugins {
                 create("grpc") { }
