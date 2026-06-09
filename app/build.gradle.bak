@@ -1,6 +1,0 @@
-
-// Force protobuf-java and exclude protobuf-javalite (fix for Google Cloud libs)
-configurations.all {
-    resolutionStrategy.force("com.google.protobuf:protobuf-java:3.21.12")
-    exclude group: "com.google.protobuf", module: "protobuf-javalite"
-}

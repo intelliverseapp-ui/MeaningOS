@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import com.example.meaningosapp.ui.theme.BabyNodeTheme
 
-// ⭐ Correct imports for your actual project structure
 import com.example.meaningosapp.ui.main.face.viewmodel.BabyNodeViewModel
 import com.example.meaningosapp.ui.main.face.viewmodel.BabyNodeViewModelFactory
 import com.example.meaningosapp.ui.main.face.ui.BabyNodeScreen
@@ -16,9 +15,11 @@ import com.example.meaningosapp.core.ptp.PTPGraph
 import com.example.meaningosapp.core.ptp.PTPGraphBuilder
 import kotlinx.serialization.json.Json
 
+// ⭐ REQUIRED FIX — this import was missing
+import androidx.compose.runtime.collectAsState
+
 class BabyNodeActivity : ComponentActivity() {
 
-    // ⭐ ViewModel created with factory (Context passed correctly)
     private val viewModel: BabyNodeViewModel by viewModels {
         BabyNodeViewModelFactory(this)
     }
@@ -47,8 +48,16 @@ class BabyNodeActivity : ComponentActivity() {
 
         setContent {
             BabyNodeTheme {
-                // ⭐ BabyNodeScreen now receives the ViewModel
-                BabyNodeScreen(viewModel = viewModel)
+
+                BabyNodeScreen(
+                    mode = viewModel.mode.collectAsState().value,
+                    partialText = viewModel.partialText.collectAsState().value,
+                    finalText = viewModel.finalText.collectAsState().value,
+                    reply = viewModel.reply.collectAsState().value,
+                    waveform = viewModel.waveform.collectAsState().value,
+                    onStartListening = { viewModel.startListening() },
+                    onStopListening = { viewModel.stopListening() }
+                )
             }
         }
     }

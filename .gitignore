@@ -1,13 +1,50 @@
+# ============================
+# MeaningOS + Android Project
+# Complete .gitignore
+# ============================
+
+# --- Android build system ---
 .gradle/
 build/
 local.properties
 .idea/
 *.iml
-*.log
 out/
 .externalNativeBuild/
 .cxx/
+
+# --- Android signing files ---
 *.jks
 *.keystore
+
+# --- Logs ---
+*.log
+*.out
+*.err
+
+# --- OS junk ---
 Thumbs.db
 .DS_Store
+*.dmg
+
+# --- Android Studio crash dumps ---
+*.hprof
+
+# --- MeaningOS proto dumps ---
+proto_list*.txt
+proto_tree*.txt
+proto_dirs.txt
+stt_*.txt
+
+# --- MeaningOS crash files ---
+crash_full.txt
+
+# --- MeaningOS backup/restore folders ---
+*_backup*
+*_BACKUP
+*_restore
+
+# --- Ignore embedded googleapis repo ---
+protos/googleapis/
+
+app/src/main/res/raw/gcp_stt_key.json

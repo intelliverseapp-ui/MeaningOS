@@ -1,21 +1,118 @@
 package com.example.meaningosapp.ui.main.face.audio.timbre.modifiers
 
-import com.example.meaningosapp.ui.main.face.ui.BabyEmotion
-import com.example.meaningosapp.ui.main.face.audio.timbre.core.TimbreParams
+import com.example.meaningosapp.ui.main.face.audio.BabyEmotion
 
+/**
+ * EmotionTimbre
+ *
+ * Maps BabyEmotion → timbre shaping parameters.
+ * These values influence:
+ *  - EQ curves
+ *  - Brightness
+ *  - Breathiness
+ *  - Resonance
+ *
+ * Baby Node 1.0 keeps this subtle.
+ */
 object EmotionTimbre {
-    fun timbreForEmotion(emotion: BabyEmotion, intensity: Double): TimbreParams {
-        val scaled = { v: Double -> (v * (0.5 + intensity * 0.5)).coerceIn(0.0, 1.0) }
+
+    data class TimbreParams(
+        val brightness: Float,
+        val breathiness: Float,
+        val resonance: Float
+    )
+
+    /**
+     * Main mapping function.
+     * Must be exhaustive for BabyEmotion enum.
+     */
+    fun forEmotion(emotion: BabyEmotion): TimbreParams {
         return when (emotion) {
-            BabyEmotion.HAPPY -> TimbreParams(scaled(0.9), scaled(0.5), scaled(0.3), scaled(0.7))
-            BabyEmotion.SAD -> TimbreParams(scaled(0.2), scaled(0.9), scaled(0.1), scaled(0.4))
-            BabyEmotion.ANGRY -> TimbreParams(scaled(0.7), scaled(0.3), scaled(1.0), scaled(0.5))
-            BabyEmotion.SCARED -> TimbreParams(scaled(0.6), scaled(0.2), scaled(0.8), scaled(0.3))
-            BabyEmotion.LOVE -> TimbreParams(scaled(0.5), scaled(1.0), scaled(0.2), scaled(0.9))
-            BabyEmotion.SURPRISED -> TimbreParams(scaled(1.0), scaled(0.4), scaled(0.7), scaled(0.8))
-            BabyEmotion.THINKING -> TimbreParams(scaled(0.4), scaled(0.7), scaled(0.2), scaled(0.5))
-            BabyEmotion.CURIOUS -> TimbreParams(scaled(0.8), scaled(0.5), scaled(0.4), scaled(0.6))
-            else -> TimbreParams(scaled(0.5), scaled(0.5), scaled(0.5), scaled(0.5))
+
+            BabyEmotion.NEUTRAL ->
+                TimbreParams(
+                    brightness = 0.0f,
+                    breathiness = 0.0f,
+                    resonance = 0.0f
+                )
+
+            BabyEmotion.HAPPY ->
+                TimbreParams(
+                    brightness = 0.25f,
+                    breathiness = 0.10f,
+                    resonance = 0.15f
+                )
+
+            BabyEmotion.LOVE ->
+                TimbreParams(
+                    brightness = 0.10f,
+                    breathiness = 0.20f,
+                    resonance = 0.25f
+                )
+
+            BabyEmotion.CONNECTED ->
+                TimbreParams(
+                    brightness = 0.05f,
+                    breathiness = 0.05f,
+                    resonance = 0.10f
+                )
+
+            BabyEmotion.SAD ->
+                TimbreParams(
+                    brightness = -0.20f,
+                    breathiness = 0.15f,
+                    resonance = -0.10f
+                )
+
+            BabyEmotion.ANGRY ->
+                TimbreParams(
+                    brightness = 0.30f,
+                    breathiness = -0.10f,
+                    resonance = 0.20f
+                )
+
+            BabyEmotion.SCARED ->
+                TimbreParams(
+                    brightness = 0.15f,
+                    breathiness = 0.25f,
+                    resonance = -0.05f
+                )
+
+            BabyEmotion.THINKING ->
+                TimbreParams(
+                    brightness = -0.05f,
+                    breathiness = 0.0f,
+                    resonance = 0.05f
+                )
+
+            BabyEmotion.CURIOUS ->
+                TimbreParams(
+                    brightness = 0.10f,
+                    breathiness = 0.05f,
+                    resonance = 0.10f
+                )
+
+            BabyEmotion.SURPRISED ->
+                TimbreParams(
+                    brightness = 0.20f,
+                    breathiness = 0.10f,
+                    resonance = 0.15f
+                )
+
+            // ⭐ Newly added states for TTS prosody
+            BabyEmotion.CALM ->
+                TimbreParams(
+                    brightness = -0.10f,
+                    breathiness = 0.05f,
+                    resonance = 0.10f
+                )
+
+            BabyEmotion.EXCITED ->
+                TimbreParams(
+                    brightness = 0.35f,
+                    breathiness = 0.15f,
+                    resonance = 0.25f
+                )
         }
     }
 }

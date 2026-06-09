@@ -1,7 +1,10 @@
+import com.google.protobuf.gradle.*
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10"
+    id("com.google.protobuf") version "0.9.4"
 }
 
 android {
@@ -15,11 +18,16 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        // ⭐ Expose your Google Cloud STT key to BuildConfig
         buildConfigField(
             "String",
             "GOOGLE_CLOUD_STT_API_KEY",
             "\"${project.properties["GOOGLE_CLOUD_STT_API_KEY"]}\""
+        )
+
+        buildConfigField(
+            "String",
+            "GOOGLE_CLOUD_TTS_API_KEY",
+            "\"${project.properties["GOOGLE_CLOUD_TTS_API_KEY"]}\""
         )
     }
 
@@ -35,7 +43,7 @@ android {
 
     buildFeatures {
         compose = true
-        buildConfig = true   // ⭐ REQUIRED FIX — enables BuildConfig fields
+        buildConfig = true
     }
 
     composeOptions {
@@ -50,6 +58,41 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    packaging {
+        resources {
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/io.netty.versions.properties"
+            excludes += "META-INF/DEPENDENCIES"
+        }
+    }
+}
+
+protobuf {
+    protoc {
+        path = "/opt/homebrew/bin/protoc"
+    }
+
+    plugins {
+        create("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.62.2"
+        }
+        create("grpckt") {
+            artifact = "io.grpc:protoc-gen-grpc-kotlin:1.4.1:jdk8@jar"
+        }
+    }
+
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("java") { }
+            }
+            task.plugins {
+                create("grpc") { }
+                create("grpckt") { }
+            }
+        }
+    }
 }
 
 dependencies {
@@ -58,44 +101,43 @@ dependencies {
     implementation("androidx.compose.ui:ui:1.5.3")
     implementation("androidx.compose.ui:ui-tooling-preview:1.5.3")
     implementation("androidx.compose.material3:material3:1.1.2")
-
-    // ⭐ FIX: Compose ViewModel integration
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
 
-    // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 
-    // Ktor 2.x Client
     implementation("io.ktor:ktor-client-core:2.3.7")
     implementation("io.ktor:ktor-client-okhttp:2.3.7")
     implementation("io.ktor:ktor-client-logging:2.3.7")
     implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
 
-    // USB Serial library
     implementation("com.github.mik3y:usb-serial-for-android:3.6.0")
 
-    // ⭐ ML Kit removed — this was the failing dependency
-    // implementation("com.google.mlkit:speech-recognition:16.0.0-beta3")
-
-    // -----------------------------
-    // ⭐ Google Cloud Speech gRPC
-    // -----------------------------
-    implementation("com.google.cloud:google-cloud-speech:4.6.0")
-
-    // gRPC core
-    implementation("io.grpc:grpc-okhttp:1.63.0")
-    implementation("io.grpc:grpc-protobuf-lite:1.63.0")
-    implementation("io.grpc:grpc-stub:1.63.0")
-
-    // Kotlin coroutines support for gRPC
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling:1.5.3")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.5.3")
-}
-// Force protobuf-javalite and exclude protobuf-java
-configurations.all {
-    resolutionStrategy.force("com.google.protobuf:protobuf-javalite:3.25.1")
-    exclude(group = "com.google.protobuf", module = "protobuf-java")
+
+    implementation("io.grpc:grpc-okhttp:1.62.2") {
+        exclude(group = "com.google.protobuf")
+    }
+    implementation("io.grpc:grpc-protobuf:1.62.2") {
+        exclude(group = "com.google.protobuf")
+    }
+    implementation("io.grpc:grpc-stub:1.62.2") {
+        exclude(group = "com.google.protobuf")
+    }
+    implementation("io.grpc:grpc-kotlin-stub:1.4.1") {
+        exclude(group = "com.google.protobuf")
+    }
+    implementation("io.grpc:grpc-auth:1.62.2") {
+        exclude(group = "com.google.protobuf")
+    }
+
+    implementation("com.google.protobuf:protobuf-java:4.35.0")
+
+    implementation("com.google.cloud:google-cloud-speech:4.78.0")
+
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.16.0")
 }

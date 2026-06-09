@@ -1,92 +1,124 @@
+// FILE: BabyCloudSttEngine.kt
 package com.example.meaningosapp.ui.main.face.audio
 
-import com.example.meaningosapp.BuildConfig
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import java.util.concurrent.atomic.AtomicBoolean
+import android.content.Context
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 
-/**
- * BabyCloudSttEngine
- *
- * REAL Google Cloud STREAMING Speech‑to‑Text engine for Baby Node.
- *
- * This version:
- *  - opens a real gRPC streaming session
- *  - streams PCM16 audio chunks
- *  - receives partial transcripts
- *  - receives final transcripts
- *  - shuts down cleanly
- */
-class BabyCloudSttEngine {
+class BabyCloudSttEngine(
+    private val appContext: Context,
+    private val scope: CoroutineScope,
+    private val gcpClient: GoogleCloudSttClient,
+    private val sampleRateHz: Int = 16_000,
+    private val languageCode: String = "en-US",
+    private val modelId: String = ""
+) {
 
-    private val apiKey: String = BuildConfig.GOOGLE_CLOUD_STT_API_KEY
+    private val _partialText = MutableSharedFlow<String>(replay = 1)
+    val partialText: SharedFlow<String> = _partialText
 
-    // Streaming state
-    private val isStreaming = AtomicBoolean(false)
-    private var streamJob: Job? = null
+    private val _finalText = MutableSharedFlow<String>(replay = 1)
+    val finalText: SharedFlow<String> = _finalText
 
-    // Callbacks
-    private var onPartialCallback: ((String) -> Unit)? = null
-    private var onFinalCallback: ((String) -> Unit)? = null
-
-    // ⭐ REAL Google Cloud streaming client
-    private var streamingClient: GoogleCloudStreamingClient? = null
+    private var streamingJob: Job? = null
+    private var isStreaming = false
 
     /**
-     * Start a new streaming session.
+     * Starts a new streaming recognition session.
      */
-    fun startStreaming(
-        scope: CoroutineScope,
-        onPartial: (String) -> Unit,
-        onFinal: (String) -> Unit
-    ) {
-        if (isStreaming.get()) return
-        if (apiKey.isBlank()) return
+    fun startStreaming() {
+        if (isStreaming) return
+        isStreaming = true
 
-        onPartialCallback = onPartial
-        onFinalCallback = onFinal
+        streamingJob?.cancel()
+        streamingJob = scope.launch(Dispatchers.IO + SupervisorJob()) {
 
-        isStreaming.set(true)
+            val configRequest = GcpSttRequest.Config(
+                encoding = "LINEAR16",
+                sampleRateHz = sampleRateHz,
+                languageCode = languageCode,
+                model = modelId,
+                enablePartialResults = true
+            )
 
-        // Launch the streaming client on IO dispatcher
-        streamJob = scope.launch(Dispatchers.IO) {
-            streamingClient = GoogleCloudStreamingClient(apiKey).apply {
-                start(
-                    onPartial = { partial ->
-                        onPartialCallback?.invoke(partial)
+            try {
+                gcpClient.startStreaming(
+                    context = appContext,
+                    config = configRequest,
+                    onResponse = { response ->
+                        scope.launch {
+                            handleSttResponse(response)
+                        }
                     },
-                    onFinal = { final ->
-                        onFinalCallback?.invoke(final)
+                    onError = { throwable ->
+                        throwable.printStackTrace()
+                        stopStreaming()
                     }
                 )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                isStreaming = false
             }
         }
     }
 
     /**
-     * Send a chunk of PCM16 audio to the streaming recognizer.
+     * Sends raw PCM16 audio bytes to the active streaming session.
      */
-    fun sendAudio(pcmChunk: ByteArray) {
-        if (!isStreaming.get()) return
-        streamingClient?.sendAudio(pcmChunk)
+    fun sendAudioChunk(pcmBytes: ByteArray) {
+        if (!isStreaming || pcmBytes.isEmpty()) return
+
+        scope.launch(Dispatchers.IO + SupervisorJob()) {
+            try {
+                gcpClient.sendAudioChunk(pcmBytes)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                stopStreaming()
+            }
+        }
     }
 
     /**
-     * Finish the streaming session.
+     * Stops the current streaming session.
      */
-    fun finishStreaming() {
-        if (!isStreaming.get()) return
+    fun stopStreaming() {
+        if (!isStreaming) return
+        isStreaming = false
 
-        isStreaming.set(false)
+        scope.launch(Dispatchers.IO + SupervisorJob()) {
+            try {
+                gcpClient.finishStreaming()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                streamingJob?.cancel()
+                streamingJob = null
+            }
+        }
+    }
 
-        // ⭐ Close the REAL Google Cloud stream
-        streamingClient?.finish()
-        streamingClient = null
+    /**
+     * Handles responses from Google Cloud STT.
+     */
+    private suspend fun handleSttResponse(response: GcpSttResponse) {
+        withContext(Dispatchers.Default) {
+            when (response) {
+                is GcpSttResponse.PartialResult -> {
+                    val text = response.transcript
+                    if (text.isNotBlank()) _partialText.emit(text)
+                }
 
-        // Cancel coroutine job
-        streamJob?.cancel()
-        streamJob = null
+                is GcpSttResponse.FinalResult -> {
+                    val text = response.transcript
+                    if (text.isNotBlank()) _finalText.emit(text)
+                }
+
+                is GcpSttResponse.Error -> {
+                    println("STT error: ${response.message}")
+                    stopStreaming()
+                }
+            }
+        }
     }
 }

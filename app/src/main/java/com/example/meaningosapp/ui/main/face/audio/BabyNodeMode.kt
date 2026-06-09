@@ -1,4 +1,4 @@
-package com.example.meaningosapp.ui.main.face.ui
+package com.example.meaningosapp.ui.main.face.audio
 
 /**
  * BabyNodeMode — canonical UI state machine for Baby Node 1.0+

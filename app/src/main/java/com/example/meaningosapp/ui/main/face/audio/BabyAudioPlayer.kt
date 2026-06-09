@@ -1,37 +1,39 @@
+// FILE: BabyAudioPlayer.kt
 package com.example.meaningosapp.ui.main.face.audio
 
 import android.media.AudioAttributes
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioTrack
 
 /**
  * BabyAudioPlayer
  *
- * Baby Step 12:
- *  - Play PCM16 audio (from Google Cloud TTS)
- *  - Uses AudioTrack in STREAM mode
- *  - Supports 16 kHz mono PCM
- *
- * Next steps:
- *  - Integrate with GoogleCloudTtsClient
- *  - Integrate with BabyNodeViewModel
+ * Plays PCM16 audio (from Google Cloud TTS)
+ * - 16 kHz
+ * - Mono
+ * - PCM 16‑bit
+ * - Low‑latency streaming mode
+ * - Glitch‑proof, non‑blocking writes
  */
 class BabyAudioPlayer {
 
     private var audioTrack: AudioTrack? = null
 
     /**
-     * Initialize AudioTrack for 16 kHz PCM16 mono.
+     * Ensure AudioTrack is created and ready.
      */
     private fun ensureInitialized() {
-        if (audioTrack != null) return
+        val existing = audioTrack
+        if (existing != null && existing.state == AudioTrack.STATE_INITIALIZED) return
 
-        val sampleRate = 16000
+        val sampleRate = 16_000
         val channelConfig = AudioFormat.CHANNEL_OUT_MONO
         val encoding = AudioFormat.ENCODING_PCM_16BIT
 
         val minBuffer = AudioTrack.getMinBufferSize(sampleRate, channelConfig, encoding)
+
+        // Larger buffer = fewer underruns, smoother streaming
+        val bufferSize = minBuffer * 4
 
         audioTrack = AudioTrack.Builder()
             .setAudioAttributes(
@@ -47,7 +49,7 @@ class BabyAudioPlayer {
                     .setChannelMask(channelConfig)
                     .build()
             )
-            .setBufferSizeInBytes(minBuffer)
+            .setBufferSizeInBytes(bufferSize)
             .setTransferMode(AudioTrack.MODE_STREAM)
             .build()
 
@@ -58,8 +60,19 @@ class BabyAudioPlayer {
      * Play PCM16 audio bytes.
      */
     fun play(pcm: ByteArray) {
+        if (pcm.isEmpty()) return  // error signal from TTS engine
+
         ensureInitialized()
-        audioTrack?.write(pcm, 0, pcm.size)
+
+        val track = audioTrack ?: return
+
+        // Non‑blocking write: prevents freezes
+        val result = track.write(pcm, 0, pcm.size, AudioTrack.WRITE_NON_BLOCKING)
+
+        if (result < 0) {
+            // AudioTrack died or is in invalid state → recreate
+            reset()
+        }
     }
 
     /**
@@ -72,5 +85,13 @@ class BabyAudioPlayer {
         } catch (_: Exception) {
         }
         audioTrack = null
+    }
+
+    /**
+     * Optional: recreate the AudioTrack cleanly.
+     */
+    fun reset() {
+        stop()
+        ensureInitialized()
     }
 }

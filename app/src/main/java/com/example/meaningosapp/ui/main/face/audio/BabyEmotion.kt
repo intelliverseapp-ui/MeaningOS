@@ -1,5 +1,4 @@
-package com.example.meaningosapp.ui.main.face.ui
-
+package com.example.meaningosapp.ui.main.face.audio
 
 /**
  * BabyEmotion — canonical emotional states for Baby Node 1.0+
@@ -33,13 +32,13 @@ enum class BabyEmotion {
     // ⭐ Cognitive / reactive states
     THINKING,
     CURIOUS,
-    SURPRISED;
+    SURPRISED,
+
+    // ⭐ Prosody-only states (for TTS expressiveness)
+    CALM,
+    EXCITED;
 
     companion object {
-        /**
-         * Map an emoji (from SemanticEmojiEngine) to a BabyEmotion.
-         * This keeps the ViewModel clean.
-         */
         fun fromEmoji(emoji: String?): BabyEmotion = when (emoji) {
             "😊" -> HAPPY
             "❤️" -> LOVE

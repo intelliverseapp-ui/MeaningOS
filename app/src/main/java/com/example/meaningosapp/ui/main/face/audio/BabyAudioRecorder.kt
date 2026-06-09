@@ -1,32 +1,27 @@
+// FILE: BabyAudioRecorder.kt
 package com.example.meaningosapp.ui.main.face.audio
 
-import android.media.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.MediaRecorder
+import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * BabyAudioRecorder
  *
- * Production‑grade streaming PCM16 recorder for Baby Node.
+ * Production‑grade streaming PCM16 recorder for BabyNode.
  *
  * - 16 kHz
  * - Mono
  * - PCM 16‑bit
- * - VOICE_RECOGNITION source (with fallback)
- *
- * It:
- *   start(scope, onAudioChunk) → streams audio chunks in real time
- *   stop()                     → stops recording and releases resources
- *
- * Designed for Google Cloud Streaming STT.
+ * - VOICE_RECOGNITION source (fallback to MIC)
+ * - Non‑blocking reads
+ * - Auto‑recovery on mic failure
  */
 class BabyAudioRecorder(
-    private val sampleRate: Int = 16000,
-    private val chunkMillis: Int = 100 // ~100ms chunks
+    private val sampleRate: Int = 16_000,
+    private val chunkMillis: Int = 100
 ) {
 
     private var audioRecord: AudioRecord? = null
@@ -36,9 +31,6 @@ class BabyAudioRecorder(
 
     /**
      * Start streaming audio.
-     *
-     * @param scope CoroutineScope (e.g., viewModelScope)
-     * @param onAudioChunk callback invoked with each PCM16 chunk
      */
     fun start(
         scope: CoroutineScope,
@@ -46,54 +38,43 @@ class BabyAudioRecorder(
     ) {
         if (isRecording.get()) return
 
-        // Compute minimum buffer size
-        bufferSizeInBytes = AudioRecord.getMinBufferSize(
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT
-        ).coerceAtLeast(sampleRate / 10 * 2) // at least 100ms of audio
+        initRecorder() ?: return
 
-        // Try VOICE_RECOGNITION first, fallback to MIC
-        val audioSource = try {
-            MediaRecorder.AudioSource.VOICE_RECOGNITION
-        } catch (_: Exception) {
-            MediaRecorder.AudioSource.MIC
-        }
-
-        audioRecord = AudioRecord(
-            audioSource,
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            bufferSizeInBytes
-        )
-
-        if (audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
-            audioRecord?.release()
-            audioRecord = null
-            return
-        }
-
+        val recorder = audioRecord ?: return
         isRecording.set(true)
-        audioRecord?.startRecording()
+        recorder.startRecording()
 
-        // Chunk size in samples → bytes
-        val bytesPerSample = 2 // PCM16
-        val samplesPerChunk = (sampleRate * (chunkMillis / 1000.0)).toInt().coerceAtLeast(160)
+        val bytesPerSample = 2
+        val samplesPerChunk = (sampleRate * (chunkMillis / 1000.0))
+            .toInt()
+            .coerceAtLeast(160)
         val chunkSizeBytes = samplesPerChunk * bytesPerSample
         val buffer = ByteArray(chunkSizeBytes)
 
-        recordingJob = scope.launch(Dispatchers.IO) {
+        recordingJob = scope.launch(Dispatchers.IO + SupervisorJob()) {
             try {
                 while (isActive && isRecording.get()) {
-                    val read = audioRecord?.read(buffer, 0, buffer.size) ?: break
-                    if (read > 0) {
-                        val chunk = buffer.copyOf(read)
-                        onAudioChunk(chunk)
+
+                    val read = recorder.read(buffer, 0, buffer.size, AudioRecord.READ_NON_BLOCKING)
+
+                    if (!isRecording.get()) break
+                    if (read <= 0) {
+                        // Handle invalid states
+                        if (read == AudioRecord.ERROR_INVALID_OPERATION ||
+                            read == AudioRecord.ERROR_BAD_VALUE ||
+                            recorder.state != AudioRecord.STATE_INITIALIZED
+                        ) {
+                            restartRecorder()
+                        }
+                        continue
                     }
+
+                    // Copy only the valid portion
+                    val chunk = buffer.copyOf(read)
+                    onAudioChunk(chunk)
                 }
             } catch (_: Exception) {
-                // Avoid crashing the app; upstream handles stream closure
+                // Prevent crashes from bubbling up
             } finally {
                 stopInternal()
             }
@@ -101,12 +82,55 @@ class BabyAudioRecorder(
     }
 
     /**
+     * Initialize AudioRecord safely.
+     */
+    private fun initRecorder(): AudioRecord? {
+        bufferSizeInBytes = AudioRecord.getMinBufferSize(
+            sampleRate,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT
+        ).coerceAtLeast(sampleRate / 10 * 2)
+
+        val audioSource = try {
+            MediaRecorder.AudioSource.VOICE_RECOGNITION
+        } catch (_: Exception) {
+            MediaRecorder.AudioSource.MIC
+        }
+
+        val recorder = AudioRecord(
+            audioSource,
+            sampleRate,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            bufferSizeInBytes
+        )
+
+        if (recorder.state != AudioRecord.STATE_INITIALIZED) {
+            recorder.release()
+            return null
+        }
+
+        audioRecord = recorder
+        return recorder
+    }
+
+    /**
+     * Restart recorder if Android kills the mic.
+     */
+    private fun restartRecorder() {
+        stopInternal()
+        initRecorder()?.startRecording()
+    }
+
+    /**
      * Stop streaming audio.
      */
     fun stop() {
-        isRecording.set(false)
+        if (!isRecording.compareAndSet(true, false)) return
+
         recordingJob?.cancel()
         recordingJob = null
+
         stopInternal()
     }
 

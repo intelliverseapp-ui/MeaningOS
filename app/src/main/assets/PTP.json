@@ -293,9 +293,11 @@
         { "name": "growth", "definition": "Increase in size, complexity, or capacity.", "dependencies": ["energy"] },
         { "name": "repair_maintenance", "definition": "Restoration and upkeep of structure and function.", "dependencies": ["energy"] },
         { "name": "sensing_response", "definition": "Detection of stimuli and corresponding reaction.", "dependencies": ["environmental_input"] },
-        { "name": "stability_regulation", "definition": "Active management of dynamic behavior to stay within viable attractors.", "dependencies": ["homeostasis"] }
+        { "name": "stability_regulation", "definition": "Active management of dynamic behavior to stay within viable attractors.", "dependencies": ["homeostasis"] },
+        { "name": "dissipation", "definition": "Continuous release or export of energy that enables living systems to maintain far-from-equilibrium structure.", "dependencies": ["energy"] }
       ]
-    },
+    }
+  ,
 
     {
       "layer": 14,
